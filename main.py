@@ -1,17 +1,28 @@
-from textblob import TextBlob as tb
 import tweepy
-import numpy as np
 
+#override tweepy.StreamListener to add logic to on_status
+class HIVStreamListener(tweepy.StreamListener):
+
+    def on_status(self, status):
+        print(status.text)
 
 def get_creds():
     creds = dict()
 
     with open('creds.txt', 'r') as f:
-        creds['consumer_key'] = f.readline()
-        creds['consumer_secret'] = f.readline()
-        creds['access_token'] = f.readline()
-        creds['access_token_secret'] = f.readline()
+        for line in f:
+            line = line.split("=")
+            creds[line[0]] = line[1].strip()
+
     return creds
+
+
+def query_builder():
+    meds = []
+    with open('meds.txt') as f:
+        for line in f:
+            meds.append(line.strip())
+    print(meds)
 
 
 def main():
@@ -20,19 +31,13 @@ def main():
     auth.set_access_token(creds['access_token'], creds['access_token_secret'])
     api = tweepy.API(auth)
 
-    # Variável que irá armazenar todos os Tweets com a palavra escolhida na função search da API
-    public_tweets = api.search('Trump')
+    listener = HIVStreamListener()
+    stream = tweepy.Stream(auth=api.auth, listener=listener)
 
-    tweets = []  # Lista vazia para armazenar scores
-    for tweet in public_tweets:
-        print(tweet.text)
-        analysis = tb(tweet.text)
-        polarity = analysis.sentiment.polarity
-        tweets.append(polarity)
-        print(polarity)
-
-    print('MÉDIA DE SENTIMENTO: ' + str(np.mean(tweets)))
+    stream.filter(track=['bolsonaro'])
 
 
 if __name__ == '__main__':
     main()
+    # print(query_builder())
+    # print(get_creds())
