@@ -9,6 +9,10 @@ verify_ssl = true
 textblob = "*"
 tweepy = "*"
 numpy = "*"
+pandas = "*"
+scikit-learn = "*"
+nltk = "*"
+jupyter = "*"
 
 [requires]
 python_version = "3.7"
