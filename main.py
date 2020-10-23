@@ -1,10 +1,30 @@
+import json
+
 import tweepy
 
-#override tweepy.StreamListener to add logic to on_status
+
 class HIVStreamListener(tweepy.StreamListener):
+
+    def on_connect(self):
+        print('Listener conectado')
 
     def on_status(self, status):
         print(status.text)
+        write_tweet(status)
+
+    def on_error(self, status_code):
+        print(f'Erro: {status_code}')
+        return
+
+    def on_timeout(self):
+        print('Timeout')
+        return
+
+    def on_disconnect(self, notice):
+        print(notice)
+        print('Desconectado')
+        return
+
 
 def get_creds():
     creds = dict()
@@ -22,7 +42,13 @@ def query_builder():
     with open('meds.txt') as f:
         for line in f:
             meds.append(line.strip())
-    print(meds)
+
+    # meds = ' OR '.join(meds)
+    return meds
+
+
+def write_tweet(status):
+    print(json.dumps(status._json))
 
 
 def main():
@@ -34,7 +60,9 @@ def main():
     listener = HIVStreamListener()
     stream = tweepy.Stream(auth=api.auth, listener=listener)
 
-    stream.filter(track=['bolsonaro'])
+    query = query_builder()
+    stream.filter(track=query, languages=['pt'])
+    # stream.filter(track=['Trump'])
 
 
 if __name__ == '__main__':
