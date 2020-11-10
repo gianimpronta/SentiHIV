@@ -13,6 +13,8 @@ pandas = "*"
 scikit-learn = "*"
 nltk = "*"
 jupyter = "*"
+matplotlib = "*"
+seaborn = "*"
 
 [requires]
 python_version = "3.7"
