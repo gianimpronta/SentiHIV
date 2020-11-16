@@ -27,6 +27,7 @@ from sklearn.feature_selection import f_classif, SelectKBest
 from sklearn.model_selection import train_test_split
 from tensorflow.python.keras import models
 from tensorflow.python.keras.layers import Dense, Dropout
+from sklearn.utils import resample, shuffle
 
 # Vectorization parameters
 
@@ -51,8 +52,14 @@ MAX_SEQUENCE_LENGTH = 500
 
 
 def read():
-    df = pd.read_csv('dataset/Covid BR Tweets/opcovidbr.csv', index_col='Id')
-    df = df[-df.polarity.isnull()]
+    df = pd.read_csv('dataset/Big PT Tweets/NoThemeTweets.csv')
+    positivos = df[df.sentiment == 'Positivo']
+    negativos = df[df.sentiment == 'Negativo']
+    pos_res = resample(positivos, replace=False, n_samples=20000)
+    neg_res = resample(positivos, replace=False, n_samples=20000)
+    df = pd.concat([pos_res, neg_res])
+    df = shuffle(df)
+
     return train_test_split(df, test_size=0.2, random_state=123)
 
 
@@ -109,9 +116,10 @@ def lemmatization(text, nlp):
 
 
 def clean(df):
-    df = df.loc[:, ["twitter", "polarity"]]
-    df["score"] = df.polarity
-    df["text"] = df.twitter
+    df = df.loc[:, ["tweet_text", "sentiment"]]
+
+    df["score"] = df.sentiment.apply(lambda x: 0 if x == 'Negativo' else 1)
+    df["text"] = df.tweet_text
     df["text"] = df.text.apply(lambda x: remove_urls(x))
     df["text"] = df.text.apply(lambda x: remove_mentions(x))
     df["text"] = df.text.apply(lambda x: remove_html(x))
@@ -122,12 +130,12 @@ def clean(df):
     df["text"] = df.text.apply(lambda x: remove_stopwords(x))
     df["text"] = df.text.apply(lambda x: lowering(x))
     nlp = stanza.Pipeline(lang='pt', processors='tokenize,mwt,pos,lemma')
+
+    print('Lemmatization')
     df["text"] = df.text.apply(lambda x: lemmatization(x, nlp))
 
     # Removing messages that are too short.
     df = df[df.text.apply(lambda x: len(x) > 2)]
-
-    df.loc[df.score == -1, 'score'] = 0
 
     return df
 
