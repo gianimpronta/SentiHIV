@@ -52,11 +52,12 @@ MAX_SEQUENCE_LENGTH = 500
 
 
 def read():
+    print("Lendo")
     df = pd.read_csv('dataset/Big PT Tweets/NoThemeTweets.csv')
     positivos = df[df.sentiment == 'Positivo']
     negativos = df[df.sentiment == 'Negativo']
     pos_res = resample(positivos, replace=False, n_samples=20000)
-    neg_res = resample(positivos, replace=False, n_samples=20000)
+    neg_res = resample(negativos, replace=False, n_samples=20000)
     df = pd.concat([pos_res, neg_res])
     df = shuffle(df)
 
@@ -99,8 +100,8 @@ def remove_excessive_whitespace(text):
 
 
 def remove_stopwords(text):
-    stop_words = set(stopwords.words("english"))
-    # stop_words = set(stopwords.words('portuguese'))
+    # stop_words = set(stopwords.words("english"))
+    stop_words = set(stopwords.words('portuguese'))
     return " ".join(
         [word for word in text.split(" ") if word not in stop_words])
 
