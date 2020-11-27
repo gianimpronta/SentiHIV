@@ -3,7 +3,7 @@ from keras.layers import Dropout, Dense
 
 
 def mlp_model(layers, units, dropout_rate, input_shape):
-
+    # Sigmoid activation, because it's a binary output, 0 or 1
     op_units, op_activation = 1, 'sigmoid'
     model = models.Sequential()
     model.add(Dropout(rate=dropout_rate, input_shape=input_shape))
