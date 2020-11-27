@@ -2,7 +2,7 @@ from read_explore_data import read, explore, split_dataset
 from cleaning_data import clean
 from train_model import train_ngram_model
 from vectorize_data import Vectorizer
-
+from evaluate_model import evaluate
 
 RANDOM_SEED = 1869
 
@@ -33,8 +33,11 @@ def main():
 
     data = ((x_train, y_train), (x_test, y_test))
 
-    print("Treinando modelo usando parâmetros padrões")
+    print("Treinando modelo usando os seguintes parâmetros:")
+    print("Layers: 2\nUnits: 64\nDropout_rate: 0.2")
     _, __, train_history = train_ngram_model(data)
+
+    evaluate(train_history.model, x_test, y_test)
 
 
 if __name__ == '__main__':

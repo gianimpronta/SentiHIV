@@ -50,5 +50,5 @@ def train_ngram_model(data,
         acc=history2['val_acc'][-1], loss=history2['val_loss'][-1]))
 
     # Save model.
-    model.save('experimento_2_ii_mlp_model.h5')
+    model.save('opcovidbr_mlp_model.h5')
     return history2['acc'][-1], history2['loss'][-1], history
