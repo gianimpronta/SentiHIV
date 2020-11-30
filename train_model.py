@@ -46,7 +46,7 @@ class ModelTrainer:
             epochs=self._epochs,
             callbacks=callbacks,
             validation_data=(x_val.toarray(), y_val),
-            verbose=1,
+            verbose=0,
             batch_size=self._batch_size)
 
         # Print results.
@@ -56,12 +56,17 @@ class ModelTrainer:
 
         # Save model.
         model.save('opcovidbr_mlp_model.h5')
-        return history2['acc'][-1], history2['loss'][-1], history
+        return history2['val_acc'][-1], history2['val_loss'][-1], history
 
-    def set_params(self, **kwargs):
-        for k, v in kwargs:
-            if hasattr(self, '_'+k):
-                setattr(self, '_'+k, v)
+    def set_params(self, learning_rate=1e-3, epochs=1000,
+                 batch_size=128, layers=2,
+                 units=64, dropout_rate=0.2):
+        self._learning_rate = learning_rate
+        self._epochs = epochs
+        self._batch_size = batch_size
+        self._layers = layers
+        self._units = units
+        self._dropout_rate = dropout_rate
 
     def get_params(self):
         params = dict()

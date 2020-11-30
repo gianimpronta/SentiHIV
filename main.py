@@ -38,8 +38,8 @@ class Main:
         data = ((x_train, y_train), (x_test, y_test))
 
         print("Treinando modelo usando os seguintes parâmetros:")
-        print("Layers: 2\nUnits: 64\nDropout_rate: 0.2")
-        trainer = ModelTrainer()
+        print("Layers: 2\nUnits: 32\nDropout_rate: 0.4")
+        trainer = ModelTrainer(layers=2, units=32, dropout_rate=0.4)
         _, __, train_history = trainer.train(data)
 
         evaluator = ModelEvaluator(train_history.model)
