@@ -5,59 +5,92 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 
 
-def read(path='dataset/Covid BR Tweets/opcovidbr.csv'):
-    return pd.read_csv(path, index_col=0)
+class DatasetReader:
 
+    def __init__(self, path='dataset/Covid BR Tweets/opcovidbr.csv',
+                 random_seed=1869):
+        self._path = path
+        self.df = None
+        self.random_seed = random_seed
 
-def explore(df):
-    clean = 'score' in df.columns
+    @property
+    def df(self):
+        return self._df
 
-    print('='*80)
-    if clean:
-        print("Dataset limpo")
-    else:
-        print("Dataset bruto")
-    print('-'*80)
-    print(f'Tamanho do dataset: {df.shape[0]} linhas e {df.shape[1]} colunas')
-    print(f'Colunas: {", ".join(df.columns)}')
+    @df.setter
+    def df(self, new_df):
+        self._df = new_df
 
-    s = 'Valores nulos por coluna:\n'
-    for col in df.columns:
-        s += f'\t{col}: {sum(df[col].isnull())}\n'
-    print(s)
+    @property
+    def random_seed(self):
+        return self._random_seed
 
-    if clean:
-        print(
-            f'Valores de score: {", ".join([str(_) for _ in df.score.unique()])}')
-        print(f'Balanceamento de classes de score:\n')
-        print(df.score.value_counts())
-        print()
-        print("Tamanho dos textos:")
-        print(df.text.apply(lambda x: len(x)).describe())
-    else:
-        print(f'Valores de polaridade: '
-              f'{", ".join([str(_) for _ in df.polarity.unique()])}\n')
-        print(f'Balanceamento de classes de polaridade:\n')
-        print(df.polarity.value_counts())
-        print()
-        print("Tamanho dos textos:")
-        print(df.twitter.apply(lambda x: len(x)).describe())
+    @random_seed.setter
+    def random_seed(self, new_seed):
+        self._random_seed = new_seed
 
-    print("5 primeiras linhas:")
-    print(df.head())
-    print("5 últimas linhas:")
-    print(df.tail())
+    def read(self):
+        self.df = pd.read_csv(self._path, index_col=0)
+        return self.df
 
-    print('='*80)
+    def explore(self, df=None):
+        if not df:
+            df = self.df
 
+        clean = 'score' in df.columns
 
-def split_dataset(df, random_state=1869, test_size=0.3, **kwargs):
-    return train_test_split(df,
-                            test_size=test_size,
-                            random_state=random_state, **kwargs)
+        print('='*80)
+        if clean:
+            print("Dataset limpo")
+        else:
+            print("Dataset bruto")
+        print('-'*80)
+        print(f'Tamanho do dataset: {df.shape[0]} linhas e {df.shape[1]} colunas')
+        print(f'Colunas: {", ".join(df.columns)}')
+
+        s = 'Valores nulos por coluna:\n'
+        for col in df.columns:
+            s += f'\t{col}: {sum(df[col].isnull())}\n'
+        print(s)
+
+        if clean:
+            print(
+                f'Valores de score: {", ".join([str(_) for _ in df.score.unique()])}')
+            print(f'Balanceamento de classes de score:\n')
+            print(df.score.value_counts())
+            print()
+            print("Tamanho dos textos:")
+            print(df.text.apply(lambda x: len(x)).describe())
+        else:
+            print(f'Valores de polaridade: '
+                  f'{", ".join([str(_) for _ in df.polarity.unique()])}\n')
+            print(f'Balanceamento de classes de polaridade:\n')
+            print(df.polarity.value_counts())
+            print()
+            print("Tamanho dos textos:")
+            print(df.twitter.apply(lambda x: len(x)).describe())
+
+        print("5 primeiras linhas:")
+        print(df.head())
+        print("5 últimas linhas:")
+        print(df.tail())
+
+        print('='*80)
+
+    def split_dataset(self, random_state=None,
+                      test_size=0.3, df=None, **kwargs):
+        if not random_state:
+            random_state = self.random_seed
+
+        if not df:
+            df = self.df
+        return train_test_split(df, test_size=test_size,
+                                random_state=random_state, **kwargs)
 
 
 if __name__ == '__main__':
-    df = read()
-    explore(df)
+    dr = DatasetReader()
+    dr.read()
+    dr.explore()
+    df_train, df_test = dr.split_dataset()
 

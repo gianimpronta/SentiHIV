@@ -1,93 +1,111 @@
 import re
 
 import nltk
-import stanza
 import pandas as pd
+import stanza
 from sklearn.utils import shuffle
+
 nltk.download('stopwords')
 from nltk.corpus import stopwords
+
 stanza.download('pt')
 
-nlp = stanza.Pipeline(lang='pt', processors='tokenize,mwt,pos,lemma')
 
+class DataCleaner:
 
-def remove_urls(text):
-    url_remover = re.compile(r'https?://\S+|www\.\S+')
-    return url_remover.sub(r'', text)
+    def __init__(self):
+        self.nlp = stanza.Pipeline(
+            lang='pt', processors='tokenize,mwt,pos,lemma')
 
+    @property
+    def nlp(self):
+        return self._nlp
 
-def remove_html(text):
-    html_remover = re.compile(r'<.*?>')
-    return html_remover.sub(r'', text)
+    @nlp.setter
+    def nlp(self, value):
+        self._nlp = value
 
+    @staticmethod
+    def remove_urls(text):
+        url_remover = re.compile(r'https?://\S+|www\.\S+')
+        return url_remover.sub(r'', text)
 
-def remove_mentions(text):
-    mention_remover = re.compile(r'@\w+')
-    return mention_remover.sub(r'', text)
+    @staticmethod
+    def remove_html(text):
+        html_remover = re.compile(r'<.*?>')
+        return html_remover.sub(r'', text)
 
+    @staticmethod
+    def remove_mentions(text):
+        mention_remover = re.compile(r'@\w+')
+        return mention_remover.sub(r'', text)
 
-def remove_numbers(text):
-    number_remover = re.compile(r'\d+')
-    return number_remover.sub(r'', text)
+    @staticmethod
+    def remove_numbers(text):
+        number_remover = re.compile(r'\d+')
+        return number_remover.sub(r'', text)
 
+    @staticmethod
+    def remove_hashtags(text):
+        number_remover = re.compile(r'#\w+')
+        return number_remover.sub(r'', text)
 
-def remove_hashtags(text):
-    number_remover = re.compile(r'#\w+')
-    return number_remover.sub(r'', text)
+    @staticmethod
+    def remove_punctuation(text):
+        punct_remover = re.compile(r'[^\w\s\d]+')
+        return punct_remover.sub(r'', text)
 
+    @staticmethod
+    def remove_excessive_whitespace(text):
+        ws_remover = re.compile(r'\s+')
+        return ws_remover.sub(r' ', str(text)).strip()
 
-def remove_punctuation(text):
-    punct_remover = re.compile(r'[^\w\s\d]+')
-    return punct_remover.sub(r'', text)
+    @staticmethod
+    def remove_stopwords(text, stop_words):
+        return " ".join(
+            [word for word in text.split(" ") if word not in stop_words])
 
+    @staticmethod
+    def lowering(text):
+        return text.lower()
 
-def remove_excessive_whitespace(text):
-    ws_remover = re.compile(r'\s+')
-    return ws_remover.sub(r' ', str(text)).strip()
+    @staticmethod
+    def lemmatization(text, nlp):
+        doc = nlp(text)
+        return ' '.join(
+            [f'{word.lemma}' for sent in doc.sentences for word in sent.words])
 
+    @staticmethod
+    def clean(df):
+        try:
+            df = pd.read_csv('dataset/clean_opcovidbr.csv',
+                             index_col=0)
+        except FileNotFoundError:
+            stop_words = set(stopwords.words('portuguese'))
+            df = df.loc[:, ["twitter", "polarity"]]
+            df = df[-df.polarity.isnull()]
+            df["score"] = df.polarity
+            df["score"] = df.score.apply(lambda x: 0 if x == -1 else 1)
 
-def remove_stopwords(text, stop_words):
-    return " ".join(
-        [word for word in text.split(" ") if word not in stop_words])
+            df["text"] = df.twitter
+            df["text"] = df.text.apply(lambda x: self.remove_urls(x))
+            df["text"] = df.text.apply(lambda x: self.remove_mentions(x))
+            df["text"] = df.text.apply(lambda x: self.remove_html(x))
+            df["text"] = df.text.apply(lambda x: self.remove_numbers(x))
+            df["text"] = df.text.apply(lambda x: self.remove_hashtags(x))
+            df["text"] = df.text.apply(lambda x: self.remove_punctuation(x))
+            df["text"] = df.text.apply(
+                lambda x: self.remove_excessive_whitespace(x))
+            df["text"] = df.text.apply(
+                lambda x: self.remove_stopwords(x, stop_words))
+            df["text"] = df.text.apply(lambda x: self.lowering(x))
 
+            df = df[df.text.apply(lambda x: len(x.split(" ")) > 2)]
 
-def lowering(text):
-    return text.lower()
+            df["text"] = df.text.apply(
+                lambda x: self.lemmatization(x, self.nlp))
 
+            df = shuffle(df)
+            df.to_csv('dataset/clean_opcovidbr.csv')
 
-def lemmatization(text, nlp):
-    doc = nlp(text)
-    return ' '.join(
-        [f'{word.lemma}' for sent in doc.sentences for word in sent.words])
-
-
-def clean(df):
-    try:
-        df = pd.read_csv('dataset/clean_opcovidbr.csv',
-                         index_col=0)
-    except FileNotFoundError:
-        stop_words = set(stopwords.words('portuguese'))
-        df = df.loc[:, ["twitter", "polarity"]]
-        df = df[-df.polarity.isnull()]
-        df["score"] = df.polarity
-        df["score"] = df.score.apply(lambda x: 0 if x == -1 else 1)
-
-        df["text"] = df.twitter
-        df["text"] = df.text.apply(lambda x: remove_urls(x))
-        df["text"] = df.text.apply(lambda x: remove_mentions(x))
-        df["text"] = df.text.apply(lambda x: remove_html(x))
-        df["text"] = df.text.apply(lambda x: remove_numbers(x))
-        df["text"] = df.text.apply(lambda x: remove_hashtags(x))
-        df["text"] = df.text.apply(lambda x: remove_punctuation(x))
-        df["text"] = df.text.apply(lambda x: remove_excessive_whitespace(x))
-        df["text"] = df.text.apply(lambda x: lowering(x))
-        df["text"] = df.text.apply(lambda x: remove_stopwords(x, stop_words))
-
-        df = df[df.text.apply(lambda x: len(x.split(" ")) > 2)]
-
-        df["text"] = df.text.apply(lambda x: lemmatization(x, nlp))
-
-        df = shuffle(df)
-        df.to_csv('dataset/clean_opcovidbr.csv')
-
-    return df
+        return df

@@ -5,13 +5,11 @@ from sklearn.feature_selection import SelectKBest, f_classif
 
 class Vectorizer:
 
-    def __init__(self,
-                 ngram_range=(1, 2),  # Unigrams and bigrams
-                 top_k=20000,   #
-                 token_mode='word',  # Could be 'words' or 'chars'
-                 min_document_frequency=2  # only select words that appear at
-                 # least twice in documents
-                 ):
+    # Unigrams and bigrams
+    # Could be 'words' or 'chars'
+    # only select words that appear at least twice in documents
+    def __init__(self, ngram_range=(1, 2), top_k=20000, token_mode='word',
+                 min_document_frequency=2):
 
         # Limiting the number of features
         self.top_k = top_k
