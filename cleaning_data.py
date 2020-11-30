@@ -8,14 +8,21 @@ from sklearn.utils import shuffle
 nltk.download('stopwords')
 from nltk.corpus import stopwords
 
-stanza.download('pt')
+
+class NotSupportedError(Exception):
+    pass
 
 
 class DataCleaner:
 
-    def __init__(self):
+    def __init__(self, language='pt'):
+        if language not in ['pt', 'en']:
+            raise NotSupportedError(
+                "language not supported. valid languages: 'pt', 'en'.")
+        self.language = language
+        stanza.download(language)
         self.nlp = stanza.Pipeline(
-            lang='pt', processors='tokenize,mwt,pos,lemma')
+            lang=language, processors='tokenize,mwt,pos,lemma')
 
     @property
     def nlp(self):
@@ -27,7 +34,7 @@ class DataCleaner:
 
     @staticmethod
     def remove_urls(text):
-        url_remover = re.compile(r'https?://\S+|www\.\S+')
+        url_remover = re.compile(r'https?://\s+|www\.\s+')
         return url_remover.sub(r'', text)
 
     @staticmethod
@@ -75,35 +82,36 @@ class DataCleaner:
         return ' '.join(
             [f'{word.lemma}' for sent in doc.sentences for word in sent.words])
 
-    @staticmethod
-    def clean(df):
+    def clean(self, df):
         try:
-            df = pd.read_csv('dataset/clean_opcovidbr.csv',
-                             index_col=0)
+            df = pd.read_csv('dataset/clean_opcovidbr.csv', index_col=0)
         except FileNotFoundError:
-            stop_words = set(stopwords.words('portuguese'))
+            if self.language == 'pt':
+                stop_words = set(stopwords.words('portuguese'))
+            else:
+                stop_words = set(stopwords.words('english'))
             df = df.loc[:, ["twitter", "polarity"]]
             df = df[-df.polarity.isnull()]
             df["score"] = df.polarity
             df["score"] = df.score.apply(lambda x: 0 if x == -1 else 1)
 
             df["text"] = df.twitter
-            df["text"] = df.text.apply(lambda x: self.remove_urls(x))
-            df["text"] = df.text.apply(lambda x: self.remove_mentions(x))
-            df["text"] = df.text.apply(lambda x: self.remove_html(x))
-            df["text"] = df.text.apply(lambda x: self.remove_numbers(x))
-            df["text"] = df.text.apply(lambda x: self.remove_hashtags(x))
-            df["text"] = df.text.apply(lambda x: self.remove_punctuation(x))
+            df["text"] = df.text.apply(lambda x: DataCleaner.remove_urls(x))
+            df["text"] = df.text.apply(lambda x: DataCleaner.remove_mentions(x))
+            df["text"] = df.text.apply(lambda x: DataCleaner.remove_html(x))
+            df["text"] = df.text.apply(lambda x: DataCleaner.remove_numbers(x))
+            df["text"] = df.text.apply(lambda x: DataCleaner.remove_hashtags(x))
+            df["text"] = df.text.apply(lambda x: DataCleaner.remove_punctuation(x))
             df["text"] = df.text.apply(
-                lambda x: self.remove_excessive_whitespace(x))
+                lambda x: DataCleaner.remove_excessive_whitespace(x))
             df["text"] = df.text.apply(
-                lambda x: self.remove_stopwords(x, stop_words))
-            df["text"] = df.text.apply(lambda x: self.lowering(x))
+                lambda x: DataCleaner.remove_stopwords(x, stop_words))
+            df["text"] = df.text.apply(lambda x: DataCleaner.lowering(x))
 
             df = df[df.text.apply(lambda x: len(x.split(" ")) > 2)]
 
             df["text"] = df.text.apply(
-                lambda x: self.lemmatization(x, self.nlp))
+                lambda x: DataCleaner.lemmatization(x, DataCleaner.nlp))
 
             df = shuffle(df)
             df.to_csv('dataset/clean_opcovidbr.csv')

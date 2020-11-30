@@ -17,7 +17,8 @@ class Main:
         dr.explore()
 
         print("\n\nLimpando dados\n")
-        dr.df = DataCleaner().clean(dr.df)
+        cleaner = DataCleaner('pt')
+        dr.df = cleaner.clean(dr.df)
         dr.explore()
 
         print("Dividindo o dataset em treino e teste ")
