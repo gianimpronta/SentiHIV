@@ -3,24 +3,40 @@ from cleaning_data import DataCleaner
 from train_model import ModelTrainer
 from vectorize_data import Vectorizer
 from evaluate_model import ModelEvaluator
+import time
+import random
 
-RANDOM_SEED = 1869
+RANDOM_SEED = 1
+
+random.seed(RANDOM_SEED)
+from numpy.random import seed
+seed(RANDOM_SEED)
 
 
 class Main:
 
     @staticmethod
     def execute():
+        tempo = {
+            'leitura': 0,
+            'limpeza': 0,
+            'treinamento': 0
+        }
+        ini_leitura = time.time()
         dr = DatasetReader(random_seed=RANDOM_SEED)
         print("Lendo dados\n")
         dr.read()
-        dr.explore()
+        # dr.explore()
+        tempo['leitura'] = time.time()-ini_leitura
 
         print("\n\nLimpando dados\n")
-        cleaner = DataCleaner('pt')
+        ini_limpeza = time.time()
+        cleaner = DataCleaner(language='pt', random_seed=RANDOM_SEED)
         dr.df = cleaner.clean(dr.df)
-        dr.explore()
+        tempo['limpeza'] = time.time() - ini_limpeza
+        # dr.explore()
 
+        ini_treinamento = time.time()
         print("Dividindo o dataset em treino e teste ")
         df_train, df_test = dr.split_dataset()
 
@@ -42,9 +58,12 @@ class Main:
         print("Layers: 2\nUnits: 32\nDropout_rate: 0.4")
         trainer = ModelTrainer(layers=2, units=32, dropout_rate=0.4)
         _, __, train_history = trainer.train(data)
+        tempo['treinamento'] = time.time() - ini_treinamento
 
         evaluator = ModelEvaluator(train_history.model)
         evaluator.evaluate(x_test, y_test)
+
+        print(tempo)
 
 
 if __name__ == '__main__':

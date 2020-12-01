@@ -47,7 +47,9 @@ class ModelTrainer:
             callbacks=callbacks,
             validation_data=(x_val.toarray(), y_val),
             verbose=0,
-            batch_size=self._batch_size)
+            batch_size=self._batch_size,
+            shuffle=False
+        )
 
         # Print results.
         history2 = history.history

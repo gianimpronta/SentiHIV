@@ -44,7 +44,7 @@ class ModelTuner:
         # Select parameter values to try.
         num_layers = [1, 2, 3]
         num_units = [8, 16, 32, 64, 128]
-        dropout_rates = [0.2, 0.3, 0.4, 0.5]
+        dropout_rates = [0.3, 0.4, 0.5]
         # Save parameter combination and results.
         params = {
             'layers': [],
@@ -69,10 +69,8 @@ class ModelTuner:
                                        dropout_rate=drate)
                     accuracy, loss, hist = trainer.train(data=self.data)
 
-                    print(('Accuracy: {accuracy}, Parameters: (layers={layers}, '
-                           'units={units})').format(accuracy=accuracy,
-                                                    layers=layers,
-                                                    units=units))
+                    print(f'Accuracy: {accuracy}, Parameters: (layers='
+                          f'{layers}, units={units}, dropout_rate={drate})')
 
                     for k, v in hist.history.items():
                         if not k.startswith('val'):

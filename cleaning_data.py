@@ -15,7 +15,7 @@ class NotSupportedError(Exception):
 
 class DataCleaner:
 
-    def __init__(self, language='pt'):
+    def __init__(self, language='pt', random_seed=123):
         if language not in ['pt', 'en']:
             raise NotSupportedError(
                 "language not supported. valid languages: 'pt', 'en'.")
@@ -23,18 +23,11 @@ class DataCleaner:
         stanza.download(language)
         self.nlp = stanza.Pipeline(
             lang=language, processors='tokenize,mwt,pos,lemma')
-
-    @property
-    def nlp(self):
-        return self._nlp
-
-    @nlp.setter
-    def nlp(self, value):
-        self._nlp = value
+        self.random_seed = random_seed
 
     @staticmethod
     def remove_urls(text):
-        url_remover = re.compile(r'https?://\s+|www\.\s+')
+        url_remover = re.compile(r'https?\w+')
         return url_remover.sub(r'', text)
 
     @staticmethod
@@ -73,6 +66,11 @@ class DataCleaner:
             [word for word in text.split(" ") if word not in stop_words])
 
     @staticmethod
+    def remove_lonely_letter(text):
+        return " ".join(
+            [word for word in text.split(" ") if len(word) > 1])
+
+    @staticmethod
     def lowering(text):
         return text.lower()
 
@@ -96,24 +94,26 @@ class DataCleaner:
             df["score"] = df.score.apply(lambda x: 0 if x == -1 else 1)
 
             df["text"] = df.twitter
-            df["text"] = df.text.apply(lambda x: DataCleaner.remove_urls(x))
             df["text"] = df.text.apply(lambda x: DataCleaner.remove_mentions(x))
             df["text"] = df.text.apply(lambda x: DataCleaner.remove_html(x))
             df["text"] = df.text.apply(lambda x: DataCleaner.remove_numbers(x))
             df["text"] = df.text.apply(lambda x: DataCleaner.remove_hashtags(x))
             df["text"] = df.text.apply(lambda x: DataCleaner.remove_punctuation(x))
+            df["text"] = df.text.apply(lambda x: DataCleaner.lowering(x))
+            df["text"] = df.text.apply(lambda x: DataCleaner.remove_urls(x))
             df["text"] = df.text.apply(
                 lambda x: DataCleaner.remove_excessive_whitespace(x))
             df["text"] = df.text.apply(
                 lambda x: DataCleaner.remove_stopwords(x, stop_words))
-            df["text"] = df.text.apply(lambda x: DataCleaner.lowering(x))
+            df["text"] = df.text.apply(
+                lambda x: DataCleaner.remove_lonely_letter(x))
 
             df = df[df.text.apply(lambda x: len(x.split(" ")) > 2)]
 
             df["text"] = df.text.apply(
-                lambda x: DataCleaner.lemmatization(x, DataCleaner.nlp))
+                lambda x: DataCleaner.lemmatization(x, self.nlp))
 
-            df = shuffle(df)
+            df = shuffle(df, random_state=self.random_seed)
             df.to_csv('dataset/clean_opcovidbr.csv')
 
         return df
