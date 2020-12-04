@@ -7,11 +7,16 @@ from sklearn.model_selection import train_test_split
 
 class DatasetReader:
 
-    def __init__(self, path='dataset/Covid BR Tweets/opcovidbr.csv',
-                 random_seed=1869):
-        self._path = path
+    def __init__(self, train_path='dataset/Covid BR Tweets/opcovidbr.csv',
+                 test_path=None, random_seed=1869, text_col='twitter',
+                 label_col='polarity'):
+        self._path = train_path
+        self._test_path = test_path
         self.df = None
+        self.test_df = None
         self.random_seed = random_seed
+        self._text_col = text_col
+        self._label_col = label_col
 
     @property
     def df(self):
@@ -20,6 +25,14 @@ class DatasetReader:
     @df.setter
     def df(self, new_df):
         self._df = new_df
+
+    @property
+    def test_df(self):
+        return self._test_df
+
+    @test_df.setter
+    def test_df(self, new_df):
+        self._test_df = new_df
 
     @property
     def random_seed(self):
@@ -31,7 +44,10 @@ class DatasetReader:
 
     def read(self):
         self.df = pd.read_csv(self._path, index_col=0)
-        return self.df
+        if self._test_path:
+            self.test_df = pd.read_csv(self._test_path, index_col=0)
+        df = pd.concat([self.df, self.test_df])
+        return df
 
     def explore(self, df=None):
         if not df:
@@ -63,12 +79,13 @@ class DatasetReader:
             print(df.text.apply(lambda x: len(x)).describe())
         else:
             print(f'Valores de polaridade: '
-                  f'{", ".join([str(_) for _ in df.polarity.unique()])}\n')
+                  f''
+                  f'{", ".join([str(_) for _ in df[self._label_col].unique()])}\n')
             print(f'Balanceamento de classes de polaridade:\n')
-            print(df.polarity.value_counts())
+            print(df[self._label_col].value_counts())
             print()
             print("Tamanho dos textos:")
-            print(df.twitter.apply(lambda x: len(x)).describe())
+            print(df[self._text_col].apply(lambda x: len(x)).describe())
 
         print("5 primeiras linhas:")
         print(df.head())

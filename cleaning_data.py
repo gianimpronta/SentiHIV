@@ -88,23 +88,40 @@ class DataCleaner:
                 stop_words = set(stopwords.words('portuguese'))
             else:
                 stop_words = set(stopwords.words('english'))
-            df = df.loc[:, ["twitter", "polarity"]]
-            df = df[-df.polarity.isnull()]
-            df["score"] = df.polarity
-            df["score"] = df.score.apply(lambda x: 0 if x == -1 else 1)
 
-            df["text"] = df.twitter
+            if "twitter" in df.columns and "polarity" in df.columns:
+                df = df.loc[:, ["twitter", "polarity"]]
+                df = df[-df.polarity.isnull()]
+                df["score"] = df.polarity
+                df["score"] = df.score.apply(lambda x: 0 if x == -1 else 1)
+                df["text"] = df.twitter
+
+            if "OriginalTweet" in df.columns and "Sentiment" in df.columns:
+                df = df.loc[:, ["OriginalTweet", "Sentiment"]]
+                df = df[-df.Sentiment.isnull()]
+                score = {
+                    "Extremely Negative": 0,
+                    "Negative": 0,
+                    "Neutral": -1,
+                    "Positive": 1,
+                    "Extremely Positive": 1,
+                }
+
+                df["score"] = df.Sentiment.apply(lambda x: score[x])
+                df = df[-(df.score == -1)]
+                df["text"] = df.OriginalTweet
+
             df["text"] = df.text.apply(lambda x: DataCleaner.remove_mentions(x))
             df["text"] = df.text.apply(lambda x: DataCleaner.remove_html(x))
             df["text"] = df.text.apply(lambda x: DataCleaner.remove_numbers(x))
             df["text"] = df.text.apply(lambda x: DataCleaner.remove_hashtags(x))
-            df["text"] = df.text.apply(lambda x: DataCleaner.remove_punctuation(x))
             df["text"] = df.text.apply(lambda x: DataCleaner.lowering(x))
+            df["text"] = df.text.apply(
+                lambda x: DataCleaner.remove_stopwords(x, stop_words))
+            df["text"] = df.text.apply(lambda x: DataCleaner.remove_punctuation(x))
             df["text"] = df.text.apply(lambda x: DataCleaner.remove_urls(x))
             df["text"] = df.text.apply(
                 lambda x: DataCleaner.remove_excessive_whitespace(x))
-            df["text"] = df.text.apply(
-                lambda x: DataCleaner.remove_stopwords(x, stop_words))
             df["text"] = df.text.apply(
                 lambda x: DataCleaner.remove_lonely_letter(x))
 
