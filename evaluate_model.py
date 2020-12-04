@@ -37,7 +37,7 @@ class ModelEvaluator:
 
         fig, ax = plt.subplots(figsize=(8, 8))
         lw = 2
-        sns.relplot(x=fpr, y=tpr,  kind='line', size=lw, legend=False)
+        sns.lineplot(x=fpr, y=tpr, size=lw, legend=False, ax=ax, ci=None)
         plt.plot([0, 1], [0, 1], color='darkorange', lw=lw, linestyle='--')
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.05])
